@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Grading Daily/Monthly Output Tracking</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+
+        :root{
+      --card-radius: 12px;
+      --card-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      --header-bg: #4f86d9;           /* xanh lam */
+      --header-text: #ffffff;
+      --body-bg: #ffffff;
+      --text-color: #333;
+      --muted-color: #5a5a5a;
+      --divider: rgba(0,0,0,0.08);
+      --row-height: 42px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+
+   
+    
+    .chart-row {
+    display: flex;
+    gap: 16px;          /* tuỳ chỉnh */
+    }
+
+    /* Chỉ áp dụng cho container chứa thẻ oee-card */
+    .chart-container.oee-container {
+    display: flex;
+    align-items: center;    /* căn giữa theo trục dọc */
+    justify-content: center;/* căn giữa theo trục ngang */
+    }
+
+    .oee-card{
+      width: 320px;                   /* gần giống ảnh */
+      background: var(--body-bg);
+      border-radius: var(--card-radius);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;               /* để bo góc cho cả header */
+    }
+
+    .oee-header{
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 700;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+    }
+    .oee-header .label{
+      letter-spacing: 0.2px;
+    }
+    .oee-header .value{
+      font-weight: 800;
+    }
+
+    .oee-body{
+      padding: 8px 14px 12px 14px;
+      background: #fff;
+    }
+
+    .row{
+      display: grid;
+      grid-template-columns: 1fr auto; /* tên trái, giá trị phải */
+      align-items: center;
+      height: var(--row-height);
+      border-bottom: 1px solid var(--divider);
+      font-size: 15px;
+    }
+    .row:last-child{
+      border-bottom: none;
+    }
+    .row .name{
+      color: var(--muted-color);
+    }
+    .row .percent{
+      font-weight: 600;
+    }
+
+    /* Tùy chọn: thu nhỏ trên màn hình hẹp */
+    @media (max-width: 360px){
+      .oee-card{ width: 100%; }
+    }
+
+
+
+
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f0f2f5; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); }
+        h1 { color: #1877f2; border-bottom: 3px solid #1877f2; padding-bottom: 10px; margin-bottom: 20px; }
+        .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f7f9fa; }
+        .chart-row { display: flex; gap: 20px; margin-bottom: 30px; }
+        .chart-container { flex: 1; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #ffffff; }
+        #dateSelector, #monthSelector { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        label, select, input[type="file"] { font-size: 16px; }
+        #statusMessage { color: #d9534f; font-weight: bold; margin-left: 20px; }
+        
+        /* CSS CHO NÚT SQL */
+        #loadFromSqlBtn {
+            padding: 8px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #loadFromSqlBtn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Color Grading Daily/Monthly Output Tracking</h1>
+
+    <div class="controls">
+        <label for="csvFile">📁 Load file CSV:</label>
+        <input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload()">
+        
+        <strong>OR</strong>
+        <button id="loadFromSqlBtn" onclick="loadDataFromSQL()">🔄 Conect Database</button>
+        <span id="statusMessage"></span>
+    </div>
+
+    <hr>
+    
+    <div class="chart-row">
+        <div class="chart-container">
+
+            <div class="controls" style="background-color: #fff; border: none; padding: 0; margin-bottom: 15px;">
+                <h2>1. Color Grading Daily Output </h2>
+                <label for="monthSelector" id="monthLabel" style="display: none;">🗓️ Select Month:</label>
+                <select id="monthSelector" onchange="updateDailyChart()" style="display: none;"></select>
+            </div>
+            <div id="dailyQtyChart" style="height: 400px;"></div>
+        </div>
+
+        <div class="chart-container">
+            <h2>2. Color Grading Monthly Output</h2>
+            <div id="monthlyQtyChart" style="height: 450px;"></div>
+        </div>
+
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-container">
+            <div class="controls" style="background-color: #fff; border: none; padding: 0; margin-bottom: 15px;">
+                <h2>3. Daily Output By Grader </h2>
+                <label for="dateSelector" id="dateLabel" style="display: none;">📅 Select Day:</label>
+                <input type="date" id="dateSelector" onchange="updateGraderDailyChart()" style="display: none;">
+            </div>
+            <div id="graderDailyChart" style="height: 400px;"></div>
+        </div>
+        <div class="chart-container">
+            <h2>4. Color Grade By Month</h2>
+            <div id="colorMonthlyChart" style="height: 450px;"></div>
+        </div>
+    </div>
+
+   
+
+
+ 
+<div class="chart-row">
+  <div class="chart-container oee-container" style="flex: 2;">
+
+    <div class="oee-card">
+      <div class="oee-header">
+        <span class="label">Overall OEE (Today)</span>
+        <span class="value" id="oee-total">90.02%</span>
+      </div>
+      <div class="oee-body">
+        <div class="row">
+          <span class="name">Availability</span>
+          <span class="percent" id="oee-total-availability">94.35%</span>
+        </div>
+        <div class="row">
+          <span class="name">Performance</span>
+          <span class="percent" id="oee-total-performance">96.2%</span>
+        </div>
+        <div class="row">
+          <span class="name">Quality</span>
+          <span class="percent" id="oee-total-quality">100%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-container" style="flex: 8;">
+            
+             <div class="controls" style="background-color: #fff; border: none; padding: 0; margin-bottom: 15px;">
+                <h2>OEE </h2>
+              <label for="monthSelector" id="monthLabel3" style="display: none;">🗓️ Select Month:</label>
+             <select id="monthSelector3" onchange="updateOeeChart()" style="display: none;"></select>
+            </div>
+            <div id="OeeChart" style="height: 450px;"></div>
+        </div>
+
+</div>
+
+
+<div class="chart-row">
+  <div class="chart-container oee-container" style="flex: 2;">
+
+    <div class="oee-card">
+      <div class="oee-header">
+        <span class="label">Availability(Time Run)</span>
+        <span class="value" id="oee-Avai-total">94.35%</span>
+      </div>
+      <div class="oee-body">
+        <div class="row">
+          <span class="name">Planned Production Time</span>
+          <span class="percent" id="oee-Avai-plan">510 min</span>
+        </div>
+        <div class="row">
+          <span class="name">Actual Runtime</span>
+          <span class="percent" id="oee-Avai-actual">4963 min</span>
+        </div>
+       
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-container" style="flex: 8;">
+            <h2>Availability</h2>
+           
+            <label for="monthSelector" id="monthLabel1" style="display: none;">🗓️ Select Month:</label>
+            <select id="monthSelector1" onchange="updateAvaiChart()" style="display: none;"></select>
+            <div id="AvaiChart" style="height: 450px;"></div>
+        </div>
+
+</div>
+
+<div class="chart-row">
+  <div class="chart-container oee-container" style="flex: 2;">
+
+    <div class="oee-card">
+      <div class="oee-header">
+        <span class="label">Performance (Total Stone)</span>
+        <span class="value" id="oee-Per">Today</span>
+      </div>
+      <div class="oee-body">
+        <div class="row">
+          <span class="name">Planned Quantity</span>
+          <span class="percent" id="oee-Per-plan">1000 stone</span>
+        </div>
+        <div class="row">
+          <span class="name">Actual Quantity</span>
+          <span class="percent" id="oee-Per-actual">0 stone</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-container" style="flex: 8;">
+            <h2>Performance</h2>
+             <label for="monthSelector" id="monthLabel2" style="display: none;">🗓️ Select Month:</label>
+            <select id="monthSelector2" onchange="updatePerChart()" style="display: none;"></select>
+            <div id="PerChart" style="height: 450px;"></div>
+        </div>
+
+</div>
+
+
+<div class="chart-row">
+  <div class="chart-container oee-container" style="flex: 2;">
+
+    <div class="oee-card">
+      <div class="oee-header">
+        <span class="label">Quality</span>
+        <span class="value" id="oee-Qua-total">Today</span>
+      </div>
+      <div class="oee-body">
+        <div class="row">
+          <span class="name">Actual Quantity</span>
+          <span class="percent" id="oee-Qua-actual">10000 stone</span>
+        </div>
+        <div class="row">
+          <span class="name">Rejected Quantity</span>
+          <span class="percent" id="oee-Qua-reject">0 stone</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-container" style="flex: 8;">
+            <h2>Quality</h2>          
+            <div id="QualityChart" style="height: 450px;"></div>
+        </div>
+
+</div>
+
+
+
+</div> 
+
+<script>
+    let rawData = []; 
+    let oeeData = []; 
+    let allDates = [];
+    const monthMap = { 'Jan': 'Tháng 1', 'Feb': 'Tháng 2', 'Mar': 'Tháng 3', 'Apr': 'Tháng 4', 'May': 'Tháng 5', 'Jun': 'Tháng 6', 'Jul': 'Tháng 7', 'Aug': 'Tháng 8', 'Sep': 'Tháng 9', 'Oct': 'Tháng 10', 'Nov': 'Tháng 11', 'Dec': 'Tháng 12' };
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const DATE_COL = 'Date';
+    const MONTH_COL = 'Month';
+    const QTY_COL = 'QtyBalance';
+    const GRADER_COL = 'Grader';
+    const COLOR_COL = 'Color'; 
+
+    const AvaiTime = "";
+    const AvaiTotalTime = "";
+
+
+
+    function convertDateToISO(dateStr, monthStr) {
+        if (!dateStr || !monthStr) return null;
+        const currentYear = new Date().getFullYear(); 
+        const monthIndex = monthOrder.indexOf(monthStr.trim());
+        const day = dateStr.split('-')[0].trim().padStart(2, '0');
+        const monthPadded = String(monthIndex + 1).padStart(2, '0');
+        if (monthIndex === -1) return null;
+        return `${currentYear}-${monthPadded}-${day}`;
+    }
+
+    // --- HÀM TẢI TỪ SQL (FASTAPI) ---
+    function loadDataFromSQL() {
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.textContent = "Đang tải dữ liệu từ Database...";
+
+        fetch('/api/data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                if (data.length === 0) {
+                    statusMessage.textContent = "LỖI: Database không trả về dữ liệu.";
+                    return;
+                }
+
+                rawData = data; 
+                initializeDashboard(); 
+                statusMessage.textContent = "Load file Success";
+
+
+           //load data oee
+                 fetch('/api/dataoee')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data1 => {
+                if (data1.error) {
+                    throw new Error(data1.error);
+                }
+                if (data1.length === 0) {
+                    statusMessage.textContent = "LỖI: Database không trả về dữ liệu.";
+                    return;
+                }
+
+                oeeData = data1; 
+                processDataOee();
+                statusMessage.textContent = "Load file Success";
+            })
+            .catch(error => {
+                console.error("Lỗi khi fetch data:", error);
+                statusMessage.textContent = "LỖI: Không thể kết nối đến máy chủ API. " + error.message;
+            });
+
+
+
+
+
+
+
+
+
+
+            })
+            .catch(error => {
+                console.error("Lỗi khi fetch data:", error);
+                statusMessage.textContent = "LỖI: Không thể kết nối đến máy chủ API. " + error.message;
+            });
+
+
+    
+    }
+
+    // --- HÀM XỬ LÝ FILE CSV ---
+    function handleFileUpload() {
+        const fileInput = document.getElementById('csvFile');
+        const file = fileInput.files[0];
+        const statusMessage = document.getElementById('statusMessage');
+
+        if (!file) { statusMessage.textContent = "Chưa có file nào được chọn."; return; }
+        statusMessage.textContent = "Đang đọc và phân tích dữ liệu...";
+
+        Papa.parse(file, {
+            header: true, 
+            skipEmptyLines: true,
+            complete: function(results) {
+                if (results.errors.length > 0 || results.data.length === 0) {
+                    statusMessage.textContent = "LỖI: File không có dữ liệu hoặc có lỗi đọc."; return;
+                }
+                
+                const headers = Object.keys(results.data[0]);
+                if (!headers.includes(MONTH_COL) || !headers.includes(DATE_COL) || !headers.includes(QTY_COL) || !headers.includes(GRADER_COL) || !headers.includes(COLOR_COL)) {
+                    statusMessage.textContent = `LỖI: Thiếu các cột bắt buộc. Cần: ${QTY_COL}, ${DATE_COL}, ${MONTH_COL}, ${GRADER_COL}, ${COLOR_COL}.`;
+                    return;
+                }
+
+                rawData = results.data;
+                initializeDashboard(); 
+                statusMessage.textContent = "Load file Success";
+            },
+            error: function(error) {
+                statusMessage.textContent = "LỖI NGHIÊM TRỌNG: Lỗi khi đọc file PapaParse: " + error.message;
+            }
+        });
+    }
+
+    // --- HÀM KHỞI TẠO CHUNG ---
+    function initializeDashboard() {
+        // Hiển thị bộ chọn tháng và ngày
+        document.getElementById('monthSelector').style.display = 'inline-block';
+        document.getElementById('monthLabel').style.display = 'inline-block';
+
+         document.getElementById('monthSelector1').style.display = 'inline-block';
+        document.getElementById('monthLabel1').style.display = 'inline-block';
+         document.getElementById('monthSelector2').style.display = 'inline-block';
+        document.getElementById('monthLabel2').style.display = 'inline-block';
+         document.getElementById('monthSelector3').style.display = 'inline-block';
+        document.getElementById('monthLabel3').style.display = 'inline-block';
+
+
+
+        document.getElementById('dateSelector').style.display = 'inline-block';
+        document.getElementById('dateLabel').style.display = 'inline-block';
+        
+        processData(); 
+    }
+     function initializeDashboard1() {
+        // Hiển thị bộ chọn tháng và ngày
+        document.getElementById('monthSelector').style.display = 'inline-block';
+        document.getElementById('monthLabel').style.display = 'inline-block';
+        document.getElementById('dateSelector').style.display = 'inline-block';
+        document.getElementById('dateLabel').style.display = 'inline-block';
+        
+       // processData(); 
+    }
+
+    // --- HÀM XỬ LÝ DỮ LIỆU & GỌI VẼ BIỂU ĐỒ ---
+    function processData() {
+        const statusMessage = document.getElementById('statusMessage');
+        const monthSelector = document.getElementById('monthSelector');
+        const dateSelector = document.getElementById('dateSelector');
+        // Bộ chọn mới cho Biểu đồ 6
+        // const monthGraderSelector = document.getElementById('monthGraderSelector');
+        // const graderSelector = document.getElementById('graderSelector');
+        
+        let availableMonths = [...new Set(rawData
+            .map(row => row[MONTH_COL] ? row[MONTH_COL].trim() : null)
+            .filter(m => m)
+        )].sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+        let availableGraders = [...new Set(rawData
+            .map(row => row[GRADER_COL] ? row[GRADER_COL].trim() : null)
+            .filter(g => g)
+        )].sort();
+
+        allDates = [...new Set(rawData
+            .map(row => convertDateToISO(row[DATE_COL], row[MONTH_COL]))
+            .filter(d => d)
+        )].sort();
+
+        if (availableMonths.length === 0 || allDates.length === 0 || availableGraders.length === 0) {
+            statusMessage.textContent = "LỖI: Không tìm thấy dữ liệu tháng/ngày/Grader hợp lệ.";
+        }
+
+        // Cập nhật bộ chọn Tháng (cả hai)
+        monthSelector.innerHTML = ''; 
+       // monthGraderSelector.innerHTML = ''; 
+        availableMonths.forEach(month => {
+            const option1 = document.createElement('option');
+            option1.value = month;
+            option1.textContent = monthMap[month] || month;
+            monthSelector.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = month;
+            option2.textContent = monthMap[month] || month;
+          //  monthGraderSelector.appendChild(option2);
+        });
+        
+        // Cập nhật bộ chọn Grader mới
+        // graderSelector.innerHTML = '';
+        // availableGraders.forEach(grader => {
+        //     const option = document.createElement('option');
+        //     option.value = grader;
+        //     option.textContent = grader;
+        //     graderSelector.appendChild(option);
+        // });
+
+        // Cập nhật bộ chọn Ngày
+        const minDate = allDates[0];
+        const maxDate = allDates[allDates.length - 1];
+        dateSelector.min = minDate;
+        dateSelector.max = maxDate;
+        dateSelector.value = minDate;
+
+        
+        const desiredIndex = 1; // đổi tùy ý
+        const desiredDate = allDates[desiredIndex] || minDate;
+        dateSelector.value = desiredDate;
+
+
+        
+      // // Cập nhật danh sách ngày cho cả hai bộ chọn
+      //   availableDates.forEach(dateStr => {
+      //     const [y, m, d] = dateStr.split('-').map(Number);
+      //     const dt = new Date(y, m - 1, d);
+      //     const dow = dt.getDay(); // 0=CN, 6=Th7
+      //     if (excludeWeekend && (dow === 0 || dow === 6)) return;
+
+      //     const label = formatLabel(dateStr);
+
+      //     const option1 = document.createElement('option');
+      //     option1.value = dateStr;
+      //     option1.textContent = label;
+      //     dateSelector.appendChild(option1);
+
+        
+      //   });
+
+
+
+
+        // Tự động gọi vẽ tất cả 6 biểu đồ
+        updateDailyChart(); // Biểu đồ 1
+        updateMonthlyChart(availableMonths); // Biểu đồ 2
+        updateGraderDailyChart(); // Biểu đồ 3 (CẬP NHẬT SẮP XẾP)
+        updateColorMonthlyChart(availableMonths); // Biểu đồ 4
+       // updateGraderMonthlyTrendChart(availableMonths); // Biểu đồ 5
+       // updateGraderMonthlySummaryChart(); // Biểu đồ 6
+       
+    }
+     function processDataOee() {
+
+      let availableMonths1 = [...new Set(oeeData
+            .map(row => row["Month"] ? row["Month"] : null)
+            .filter(m => m)
+        )].sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+      let availableMonthsdate = [...new Set(oeeData
+            .map(row => row["Date"] ? row["Date"] : null)
+            .filter(m => m)
+        )];
+
+        const daySelector1 = document.getElementById('monthSelector1');
+        const daySelector2 = document.getElementById('monthSelector2');
+        const daySelector3 = document.getElementById('monthSelector3');
+
+        // Cập nhật bộ chọn Tháng (cả hai)
+        daySelector1.innerHTML = ''; 
+        daySelector2.innerHTML = ''; 
+        daySelector3.innerHTML = ''; 
+       // monthGraderSelector.innerHTML = ''; 
+        availableMonths1.forEach(month => {
+
+            const option1 = document.createElement('option');
+            option1.value = month;
+            option1.textContent = monthMap[month] || month;
+            daySelector1.appendChild(option1);
+
+            const option2 = document.createElement('option');
+            option2.value = month;
+            option2.textContent = monthMap[month] || month;
+            daySelector2.appendChild(option2);
+
+            const option3 = document.createElement('option');
+            option3.value = month;
+            option3.textContent = monthMap[month] || month;
+            daySelector3.appendChild(option3);
+            
+            
+        });
+
+
+
+
+        updateOeeChart(); // Biểu đồ 7
+        updateAvaiChart(); // Biểu đồ 8
+        updatePerChart(); // Biểu đồ 9
+        //updateQualityChart(availableMonths1); // Biểu đồ 10
+
+     }
+    // --- HÀM VẼ BIỂU ĐỒ 1: DAILY QTY ---
+    function updateDailyChart() {
+        const monthSelector = document.getElementById('monthSelector');
+        const selectedMonth = monthSelector.value;
+        const chartDiv = document.getElementById('dailyQtyChart');
+
+        if (!selectedMonth || rawData.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = '<p>Vui lòng chọn tháng để hiển thị dữ liệu.</p>'; return; }
+
+        const filteredData = rawData.filter(row => row[MONTH_COL] === selectedMonth);
+        const dailySummary = filteredData.reduce((acc, row) => {
+            const datePart = row[DATE_COL] ? row[DATE_COL].split('-')[0].trim() : '';
+            const day = datePart && !isNaN(parseInt(datePart)) ? parseInt(datePart, 10) : null;
+            const qty = parseInt(row[QTY_COL], 10) || 0;
+            if (day !== null) { acc[day] = (acc[day] || 0) + qty; }
+            return acc;
+        }, {});
+
+        const sortedDays = Object.keys(dailySummary).map(Number).sort((a, b) => a - b);
+        const dailyQty = sortedDays.map(day => dailySummary[day]);
+        const dayLabels = sortedDays.map(day => `${day}`); 
+
+        if (sortedDays.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu hợp lệ cho ${monthMap[selectedMonth] || selectedMonth}.</p>`; return; }
+
+        const data = [{ x: dayLabels, y: dailyQty, type: 'bar', marker: { color: '#1877f2' }, name: 'Sản lượng' }];
+        const layout = {
+            //title: `1. Sản Lượng (${QTY_COL}) Theo Ngày trong ${monthMap[selectedMonth] || selectedMonth}`,
+            xaxis: { title: 'Day of Month', tickangle: -45, categoryorder: 'array', categoryarray: dayLabels },
+            yaxis: { title: `Total Production (${QTY_COL})`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('dailyQtyChart', data, layout);
+    }
+    
+    // --- HÀM VẼ BIỂU ĐỒ 2: MONTHLY QTY ---
+    function updateMonthlyChart(months) {
+        const chartDiv = document.getElementById('monthlyQtyChart');
+        const monthlySummary = rawData.reduce((acc, row) => {
+            const month = row[MONTH_COL] ? row[MONTH_COL].trim() : null;
+            const qty = parseInt(row[QTY_COL], 10) || 0;
+            if (month) { acc[month] = (acc[month] || 0) + qty; }
+            return acc;
+        }, {});
+        
+        const sortedMonths = months;
+        const monthlyQty = sortedMonths.map(month => monthlySummary[month] || 0);
+        const monthLabels = sortedMonths.map(month => monthMap[month] || month);
+
+        if (sortedMonths.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu tháng hợp lệ.</p>`; return; }
+
+        const data = [{
+            x: monthLabels, y: monthlyQty, type: 'bar', marker: { color: '#00cc66' }, name: 'Total Production'
+        }];
+
+        const layout = {
+            //title: `2. Tổng Sản Lượng (${QTY_COL}) Theo Tháng trong Năm`,
+            xaxis: { title: 'Month', tickangle: -45, categoryorder: 'array', categoryarray: monthLabels },
+            yaxis: { title: `Total Production (${QTY_COL})`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('monthlyQtyChart', data, layout);
+    }
+
+    // --- HÀM VẼ BIỂU ĐỒ 3: GRADER DAILY (CẬP NHẬT SẮP XẾP GIẢM DẦN) ---
+    function updateGraderDailyChart() {
+        const dateSelector = document.getElementById('dateSelector');
+        const selectedISODate = dateSelector.value;
+        const chartDiv = document.getElementById('graderDailyChart');
+
+        if (!selectedISODate || rawData.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = '<p>Vui lòng chọn ngày để xem chi tiết Grader.</p>'; return; }
+
+        const dateParts = selectedISODate.split('-');
+        const selectedDay = parseInt(dateParts[2], 10);
+        const selectedMonth = monthOrder[parseInt(dateParts[1], 10) - 1];
+
+        //chartDiv.innerHTML = `<p>Chi tiết Grader cho ngày ${selectedDay} ${selectedMonth}</p>`;
+        
+
+        const filteredData = rawData.filter(row => {
+            const rowDay = row[DATE_COL] ? parseInt(row[DATE_COL].split('-')[0].trim(), 10) : null;
+            const rowMonth = row[MONTH_COL] ? row[MONTH_COL].trim() : null;
+            return rowDay === selectedDay;
+        });
+
+        const graderSummary = filteredData.reduce((acc, row) => {
+            const grader = row[GRADER_COL] ? row[GRADER_COL].trim() : 'UNKNOWN';
+            const qty = parseInt(row[QTY_COL], 10) || 0;
+            acc[grader] = (acc[grader] || 0) + qty;
+            return acc;
+        }, {});
+        
+        const graderLabels = Object.keys(graderSummary); 
+        const graderQty = graderLabels.map(g => graderSummary[g]);
+
+        if (graderLabels.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu sản lượng Grader hợp lệ cho ngày ${selectedDay} ${monthMap[selectedMonth]}.</p>`; return; }
+
+        const data = [{
+            x: graderLabels, y: graderQty, type: 'bar', marker: { color: '#ff9900' }, name: 'Sản lượng'
+        }];
+
+        const layout = {
+            //title: `3. Sản Lượng (${QTY_COL}) Theo Grader Ngày ${selectedDay} ${monthMap[selectedMonth]}`,
+            xaxis: { 
+                title: 'Grader', 
+                tickangle: -45,
+                // THAY ĐỔI QUAN TRỌNG: Sắp xếp giảm dần theo giá trị Y
+                categoryorder: 'total descending' 
+            },
+            yaxis: { title: `Total Production (${QTY_COL})`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('graderDailyChart', data, layout);
+    }
+
+    // --- HÀM VẼ BIỂU ĐỒ 4: COLOR MONTHLY ---
+    function updateColorMonthlyChart(months) {
+        const chartDiv = document.getElementById('colorMonthlyChart');
+        const colorsOfInterest = ['D-F', 'G-J', 'K'];
+        const monthlyColorData = {};
+
+        rawData.forEach(row => {
+            const month = row[MONTH_COL] ? row[MONTH_COL].trim() : null;
+            const color = row[COLOR_COL] ? row[COLOR_COL].trim() : 'Other';
+            const qty = parseInt(row[QTY_COL], 10) || 0;
+
+            if (month && colorsOfInterest.includes(color)) {
+                if (!monthlyColorData[month]) { monthlyColorData[month] = {}; }
+                monthlyColorData[month][color] = (monthlyColorData[month][color] || 0) + qty;
+            }
+        });
+
+        const sortedMonths = months;
+        const plotData = [];
+
+        colorsOfInterest.forEach(color => {
+            const monthlyQty = sortedMonths.map(month => 
+                (monthlyColorData[month] && monthlyColorData[month][color]) || 0
+            );
+
+            plotData.push({
+                x: sortedMonths.map(m => monthMap[m] || m),
+                y: monthlyQty,
+                name: color,
+                type: 'bar'
+            });
+        });
+
+        const layout = {
+            barmode: 'group',
+            //title: `4. Sản Lượng (${QTY_COL}) Theo Loại Color Qua Các Tháng`,
+            xaxis: { title: 'Month', tickangle: -45, categoryorder: 'array', categoryarray: sortedMonths.map(m => monthMap[m] || m) },
+            yaxis: { title: `Total Production (${QTY_COL})`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('colorMonthlyChart', plotData, layout);
+    }
+    
+  
+
+ // --- HÀM VẼ BIỂU ĐỒ 7: OEE ---
+    function updateOeeChart() {
+
+        let months = [...new Set(oeeData
+                .map(row => row["Date"] ? row["Date"] : null)
+                .filter(m => m)
+            )].sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+        const chartDiv = document.getElementById('OeeChart');
+        let qty_now =0;
+        let qtys_now =0;
+        const monthSelector = document.getElementById('monthSelector3');
+        const selectedMonth = monthSelector.value;
+        
+
+        if (!selectedMonth || oeeData.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = '<p>Vui lòng chọn tháng để hiển thị dữ liệu.</p>'; return; }
+
+      
+        const monthlySummary = oeeData.reduce((acc, row) => {
+            const month = row[MONTH_COL] ? String(row[MONTH_COL]).trim() : null;
+            const date  = row["Date"] ? String(row["Date"]).trim() : null;
+
+            if (month == String(selectedMonth)) {
+            const qty1 = parseInt(row["TimeRun"], 10) || 0;
+            const qty_t = (qty1 / 510);
+
+            const qty2 = parseInt(row["TotalS"], 10) || 0;
+            const qty_s = (qty2 / 1000);
+
+
+            const qty = qty_t * qty_s * 1000;
+            if (date) { acc[date] = (acc[date] || 0) + qty; }
+
+
+            ///////update to day
+            const today = new Date();
+            const day_now = today.getDate(); // Day of the month
+            const month_now = today.getMonth() + 1; // Months are 0-based, so add 1
+          
+              if (date === String(day_now) && month == String(month_now)) {
+                //if (date === "5" && month == "12") {
+              
+                const qtyn1 = parseInt(row["TimeRun"], 10) || 0; 
+                               
+                qty_now =qty_now + qtyn1;
+
+                const qtyns = parseInt(row["TotalS"], 10) || 0;       
+                qtys_now =qty_nows + qtyn1;
+              
+              }
+            }
+
+
+
+            return acc;
+        }, {});
+
+       
+
+        const chartOeeToday = document.getElementById('oee-total');
+        const chartAvaiOeeToday = document.getElementById('oee-total-availability');
+        const chartPerOeeToday = document.getElementById('oee-total-performance');
+        chartAvaiOeeToday.innerHTML = String(qty_now)
+        chartPerOeeToday.innerHTML = String(qtys_now)
+
+
+
+        const sortedMonths = months;
+        const monthlyQty = sortedMonths.map(month => monthlySummary[month] || 0);
+        const monthLabels = sortedMonths.map(month => monthMap[month] || month);
+
+        if (sortedMonths.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu tháng hợp lệ.</p>`; return; }
+
+        const data = [{
+            x: monthLabels, y: monthlyQty, type: 'bar', marker: { color: '#00cc66' }, name: 'OEE'
+        }];
+
+        const layout = {
+            //title: `2. Tổng Sản Lượng (${QTY_COL}) Theo Tháng trong Năm`,
+            xaxis: { title: 'Day of Month', tickangle: -45, categoryorder: 'array', categoryarray: monthLabels },
+            yaxis: { title: `OEE`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('OeeChart', data, layout);
+    }
+// --- HÀM VẼ BIỂU ĐỒ 8: Avai ---
+
+    function updateAvaiChart() {
+
+        let months = [...new Set(oeeData
+              .map(row => row["Date"] ? row["Date"] : null)
+              .filter(m => m)
+          )].sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+
+        const chartDiv = document.getElementById('AvaiChart');
+        const labelAvaiTotal = document.getElementById("oee-Avai-total");
+        const labelAvai = document.getElementById("oee-Avai-actual");
+
+
+        const monthSelector = document.getElementById('monthSelector1');
+        const selectedMonth = monthSelector.value;
+        
+
+        if (!selectedMonth || oeeData.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = '<p>Vui lòng chọn tháng để hiển thị dữ liệu.</p>'; return; }
+
+      
+        
+        const monthlySummary = oeeData.reduce((acc, row) => {
+            const month = row[MONTH_COL] ? String(row[MONTH_COL]).trim() : null;
+            const date  = row["Date"] ? String(row["Date"]).trim() : null;
+
+              
+            if (month == String(selectedMonth)) {
+
+
+            const qty1 = parseInt(row["TimeRun"], 10) || 0;
+            const qty = (qty1 / 510) * 100;
+            
+           // qty = (qty/510)*100;
+            if (date) { acc[date] = (acc[date] || 0) + qty; }
+            }
+            return acc;
+        }, {});
+
+        
+        // Chỉ cộng các dòng có ngày đúng bằng TARGET_DATE
+        let qty_now  = 0;
+        const AvaiTime1 = oeeData.reduce((acc, row) => {
+          const month = row[MONTH_COL] ? String(row[MONTH_COL]).trim() : null;
+          const date  = row["Date"] ? String(row["Date"]).trim() : null;
+
+          
+        const today = new Date();
+        const day_now = today.getDate(); // Day of the month
+        const month_now = today.getMonth() + 1; // Months are 0-based, so add 1
+        labelAvaiTotal.innerHTML = "Today"; //String(day_now) + '-' + String(month_now);
+          
+          if (date === String(day_now) && month == String(month_now)) {
+            //if (date === "5" && month == "12") {
+           
+            const qtyn1 = parseInt(row["TimeRun"], 10) || 0;
+           
+            qty_now =qty_now + qtyn1;
+           
+          }
+
+          
+        }, {});
+
+        
+        const sortedMonths = months;
+        const monthlyQty = sortedMonths.map(date => monthlySummary[date] || 0);
+        const monthLabels = sortedMonths.map(date => monthMap[date] || date);
+
+        if (sortedMonths.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu tháng hợp lệ.</p>`; return; }
+
+        const data = [{
+            x: monthLabels, y: monthlyQty, type: 'bar', marker: { color: '#00cc66' }, name: 'Time Run'
+        }];
+
+        const layout = {
+            //title: `2. Tổng Sản Lượng (${QTY_COL}) Theo Tháng trong Năm`,
+            xaxis: { title: 'Day of Month', tickangle: -45, categoryorder: 'array', categoryarray: monthLabels },
+            yaxis: { title: `Time Run`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('AvaiChart', data, layout);
+        labelAvai.innerHTML = String(qty_now) + " min";
+        
+    }
+// --- HÀM VẼ BIỂU ĐỒ 9: Per ---
+    function updatePerChart() {
+
+        let months = [...new Set(oeeData
+              .map(row => row["Date"] ? row["Date"] : null)
+              .filter(m => m)
+          )].sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+        const chartDiv = document.getElementById('PerChart');
+
+        const monthSelector = document.getElementById('monthSelector2');
+        const selectedMonth = monthSelector.value;
+         if (!selectedMonth || oeeData.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = '<p>Vui lòng chọn tháng để hiển thị dữ liệu.</p>'; return; }
+
+        
+        let  qty = 0;
+        const monthlySummary = oeeData.reduce((acc, row) => {
+            const month = row[MONTH_COL] ? String(row[MONTH_COL]).trim() : null;
+             const date  = row[DATE_COL] ? String(row[DATE_COL]).trim() : null;
+              
+            if (month == String(selectedMonth)) {
+           
+            const qty1 = parseInt(row["TotalS"], 10) || 0;
+            qty = (qty1 / 10000) * 100;      
+                    
+            if (date) { acc[date] = (acc[date] || 0) + qty; }
+            }
+            return acc;
+        }, {});
+
+
+          // Chỉ cộng các dòng có ngày đúng bằng TARGET_DATE
+        const labelPerTotal = document.getElementById("oee-Per");
+        const labelPer = document.getElementById("oee-Per-actual");
+        const labelQua = document.getElementById("oee-Qua-actual");
+        let qty_now  = 0;
+        const AvaiTime1 = oeeData.reduce((acc, row) => {
+          const month = row[MONTH_COL] ? String(row[MONTH_COL]).trim() : null;
+          const date  = row[DATE_COL] ? String(row[DATE_COL]).trim() : null;
+
+          
+        const today = new Date();
+        const day_now = today.getDate(); // Day of the month
+        const month_now = today.getMonth() + 1; // Months are 0-based, so add 1
+        labelPerTotal.innerHTML = "Today"; //String(day_now) + '-' + String(month_now);
+          
+          if (date === String(day_now) && month == String(month_now)) {
+           // if (date === "5" && month == "12") {
+           
+            const qtyn1 = parseInt(row["TotalS"], 10) || 0;
+           
+            qty_now =qty_now + qtyn1;
+           
+          }
+
+          
+        }, {});
+        labelPer.innerHTML = String(qty_now) + " Stone";
+        labelQua.innerHTML = String(qty_now) + " Stone";
+
+
+        
+        const sortedMonths = months;
+        const monthlyQty = sortedMonths.map(date => monthlySummary[date] || 0);
+        const monthLabels = sortedMonths.map(date => monthMap[date] || date);
+
+        if (sortedMonths.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu tháng hợp lệ.</p>`; return; }
+
+        const data = [{
+            x: monthLabels, y: monthlyQty, type: 'bar', marker: { color: '#00cc66' }, name: 'Perfromance'
+        }];
+
+        const layout = {
+            //title: `2. Tổng Sản Lượng (${QTY_COL}) Theo Tháng trong Năm`,
+            xaxis: { title: 'Day of Month', tickangle: -45, categoryorder: 'array', categoryarray: monthLabels },
+            yaxis: { title: `Perfromance`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('PerChart', data, layout);
+    }
+
+ // --- HÀM VẼ BIỂU ĐỒ 10: quality ---
+    function updateQualityChart(months) {
+        const chartDiv = document.getElementById('QualityChart');
+        const monthlySummary = rawData.reduce((acc, row) => {
+            const month = row[MONTH_COL] ? row[MONTH_COL].trim() : null;
+            const qty = parseInt(row[QTY_COL], 10) || 0;
+            if (month) { acc[month] = (acc[month] || 0) + qty; }
+            return acc;
+        }, {});
+        
+        const sortedMonths = months;
+        const monthlyQty = sortedMonths.map(month => monthlySummary[month] || 0);
+        const monthLabels = sortedMonths.map(month => monthMap[month] || month);
+
+        if (sortedMonths.length === 0) { Plotly.purge(chartDiv); chartDiv.innerHTML = `<p>Không có dữ liệu tháng hợp lệ.</p>`; return; }
+
+        const data = [{
+            x: monthLabels, y: monthlyQty, type: 'bar', marker: { color: '#00cc66' }, name: 'Total Production'
+        }];
+
+        const layout = {
+            //title: `2. Tổng Sản Lượng (${QTY_COL}) Theo Tháng trong Năm`,
+            xaxis: { title: 'Day of Month', tickangle: -45, categoryorder: 'array', categoryarray: monthLabels },
+            yaxis: { title: `Total Production (${QTY_COL})`, rangemode: 'tozero' },
+            margin: { t: 50, b: 100 }
+        };
+
+        Plotly.newPlot('QualityChart', data, layout);
+    }   
+
+</script>
+
+</body>
+</html>
