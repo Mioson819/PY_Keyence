@@ -24,7 +24,12 @@ while True:
         
 
 time.sleep(0.1)
-# Nhập thủ công các giá trị cho data_ng (mặc định 6 word units)
+# Nhập thủ công các giá trị cho data_ng (mặc định 6 word units)\\\
+
+with open('datacdh4.csv', 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Time","C","D","H","C/D","H/D"])
+
 while True:
     try:
         trig = mc.batchread_wordunits(ctrig, 1)
@@ -44,15 +49,13 @@ while True:
 
             with open('datacdh4.csv', 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow([c[0], d[0], h[0], r1 if d[0] != 0 else 'undefined', r2 if d[0] != 0 else 'undefined'])
+                writer.writerow([datetime.datetime.now(), c[0], d[0], h[0], r1 if d[0] != 0 else 'undefined', r2 if d[0] != 0 else 'undefined'])
             time.sleep(0.5)    
     except ValueError:
         print("Invalid input. Please enter integers separated by commas.")
         break  # Exit the loop if input is invalid
 
-# with open('datacdh4.csv', 'a', newline='') as csvfile:
-#             writer = csv.writer(csvfile)
-#             writer.writerow(["C","D","H","C/D","H/D"])
+
             
             
 
