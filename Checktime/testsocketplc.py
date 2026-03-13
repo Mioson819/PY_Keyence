@@ -79,6 +79,7 @@ class kvHostLink:
 
     def rss(self, address, num):
         rcv = self.sendrecive(('RSS ' + address + ' ' + str(num) + '\r').encode())
+        
         return rcv
 
     def read(self, addresssuffix):
@@ -88,6 +89,7 @@ class kvHostLink:
 
     def reads(self, addresssuffix, num):
         rcv = self.sendrecive(('RDS ' + addresssuffix + ' ' + str(num) + '\r').encode())
+        
         return rcv
 
     def write(self, addresssuffix, data):
@@ -96,11 +98,12 @@ class kvHostLink:
 
     def writs(self, addresssuffix, num, data):
         rcv = self.sendrecive(('WRS ' + addresssuffix + ' ' + str(num) + ' ' + data + '\r').encode())
+        
         return rcv
 
 
 kv = kvHostLink('192.168.0.10')
-data = kv.mode('1')
+data = str(kv.mode('1').replace(b'\r\n', b''), 'utf-8')
 print(data)
 #data = kv.er()
 #print(data)
@@ -116,14 +119,17 @@ print(data)
 #print(data)
 #data = kv.sts('MR10', 5)
 #print(data)
+
 #data = kv.rss('MR10', 4)
 #print(data)
-data = kv.reads('MR40600',3)
+data = str(kv.reads('MR40600',3).replace(b'\r\n', b''), 'utf-8')
 print(data)
-data = kv.read('MR40600')
-print(data)
-data = kv.read('MR40602')
-print(data)
+#data = kv.read('MR40600')
+#print(data)
+#data = kv.read('MR40602')
+#data = data.replace(b'\r\n', b'')
+#print(data)
+
 x = int(input("Enter the value to write to DM7300: ")   )
 kv.write('dm7300', str(x))
 #data = kv.reads('DM0.S', 4)
