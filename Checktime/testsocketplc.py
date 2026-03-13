@@ -119,7 +119,6 @@ print(data)
 #print(data)
 #data = kv.sts('MR10', 5)
 #print(data)
-
 #data = kv.rss('MR10', 4)
 #print(data)
 data = str(kv.reads('MR40600',3).replace(b'\r\n', b''), 'utf-8')
@@ -129,9 +128,9 @@ print(data)
 #data = kv.read('MR40602')
 #data = data.replace(b'\r\n', b'')
 #print(data)
-
-x = int(input("Enter the value to write to DM7300: ")   )
+x = int(input("Enter the value to write to DM7300: "))
 kv.write('dm7300', str(x))
+
 #data = kv.reads('DM0.S', 4)
 #print(data)
 #data = kv.write('DM0.U', '2')
@@ -139,3 +138,10 @@ kv.write('dm7300', str(x))
 #data = kv.writs('DM1.S', 4, '1 2 3 4')
 #print(data)
 
+# while True:
+#     try:
+#         x = int(input("Enter the value to write to DM7300: "))
+#         kv.write('dm7300', str(x))
+#     except Exception as e:
+#         print(f"Error during writing to DM7300: {e}")
+#         break
