@@ -4,9 +4,9 @@ import csv
 import datetime
 
 PLC_IP = "192.168.0.10"
-PLC_PORT = 5000
+PLC_PORT = 8501
 CDH = "D718"
-
+stt = "T90"
 # auto-py-to-exe
 
 mc = pymcprotocol.Type3E()
@@ -25,15 +25,17 @@ time.sleep(0.1)
 d1 = 0
 d2 = 0
 counter = 0
-while True:
-    data = mc.batchread_wordunits(CDH, 4)
-    if data[0] != d1 and data[2] != d2:
-        d1 = data[0]
-        d2 = data[2]
-        counter += 1
-        print(f"Current data at {CDH}: {data[0]}, {data[2]}")
-    if counter >= 20:
-        break
+# while True:
+#     data = mc.batchread_wordunits(CDH, 4)
+#     if data[0] != d1 and data[2] != d2:
+#         d1 = data[0]
+#         d2 = data[2]
+#         counter += 1
+#         print(f"Current data at {CDH}: {data[0]}, {data[2]}")
+#     if counter >= 20:
+#         break
+sttplc = mc.batchread_wordunits(stt, 1)
+print(f"Current data at {stt}: {sttplc[0]}")
 
 mc.close()
 print("close socket")
