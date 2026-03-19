@@ -106,25 +106,35 @@ class kvHostLink:
 
 kv = kvHostLink('192.168.0.10')
 
-cd_x = 'DM648'
-cd_y = 'DM650'
-cd_D = 'DM654'
-cxp_X = 'DM718'
-cxp_Y = 'DM720'
-chp_Z = 'DM788'
+cd_x = 'DM648.L'
+cd_y = 'DM650.L'
+cd_D = 'DM654.L'
+cxp_X = 'DM718.L'
+cxp_Y = 'DM720.L'
+chp_Z = 'DM788.L'
 rquld_p12 = 'MR13700'
 ul_p12_done = 'TM134'
-number_set = 'DM1850.U'
-number_input = 'DM1852.U'
+number_set = 'DM1850'
+number_input = 'DM1852'
 timenow = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 #cd_socket = NativeInterface('192.168.0.22', 'admin', '')
-cxp_socket = NativeInterface('192.168.0.23', 'admin', '')
+#cxp_socket = NativeInterface('192.168.0.23', 'admin', '')
 #chp_socket = NativeInterface('192.168.0.24', 'admin', '')
+
+# cd_x_value = kv.read(cd_x).decode(errors='ignore')
+# cd_y_value = kv.read(cd_y).decode(errors='ignore')
+# cd_D_value = kv.read(cd_D).decode(errors='ignore')
+# cxp_X_value = kv.read(cxp_X).decode(errors='ignore')
+# cxp_Y_value = kv.read(cxp_Y).decode(errors='ignore')
+# chp_Z_value = kv.read(chp_Z).decode(errors='ignore')
+        
+# print(f"CD X: {int(cd_x_value)}, CD Y: {int(cd_y_value)}, CD D: {int(cd_D_value)}, CXP X: {int(cxp_X_value)}, CXP Y: {int(cxp_Y_value)}, CHP Z: {int(chp_Z_value)}")
+       
 
 with open(f'datafix_{timenow}.csv', 'a', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow([f"{datetime.datetime.now()}: Start monitoring..."])
-    writer.writerow(['Time', 'CD X', 'CD Y', 'CD D', 'CXP X', 'CXP Y', 'CHP Z'])
+    writer.writerow(['Time','STT', 'CD X', 'CD Y', 'CD D', 'CXP X', 'CXP Y', 'CHP Z'])
 nb_set = kv.read(number_set)
 
 while True:
@@ -136,24 +146,24 @@ while True:
         print("RQUld P12 is 1 and UL P12 Done is 2")
         print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
         # Đọc giá trị từ DM648, DM650, DM654, DM718, DM720, DM788
-        cd_x_value = kv.read(cd_x.L).decode(errors='ignore')
-        cd_y_value = kv.read(cd_y.L).decode(errors='ignore')
-        cd_D_value = kv.read(cd_D.L).decode(errors='ignore')
-        cxp_X_value = kv.read(cxp_X.L).decode(errors='ignore')
-        cxp_Y_value = kv.read(cxp_Y.L).decode(errors='ignore')
-        chp_Z_value = kv.read(chp_Z.L).decode(errors='ignore')
+        cd_x_value = kv.read(cd_x).decode(errors='ignore')
+        cd_y_value = kv.read(cd_y).decode(errors='ignore')
+        cd_D_value = kv.read(cd_D).decode(errors='ignore')
+        cxp_X_value = kv.read(cxp_X).decode(errors='ignore')
+        cxp_Y_value = kv.read(cxp_Y).decode(errors='ignore')
+        chp_Z_value = kv.read(chp_Z).decode(errors='ignore')
         
-        print(f"CD X: {cd_x_value}, CD Y: {cd_y_value}, CD D: {cd_D_value}, CXP X: {cxp_X_value}, CXP Y: {cxp_Y_value}, CHP Z: {chp_Z_value}")
+        print(f"CD X: {int(cd_x_value)}, CD Y: {int(cd_y_value)}, CD D: {int(cd_D_value)}, CXP X: {int(cxp_X_value)}, CXP Y: {int(cxp_Y_value)}, CHP Z: {int(chp_Z_value)}")
         with open(f'datafix_{timenow}.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow([f"{datetime.datetime.now()}", int(cd_x_value), int(cd_y_value), int(cd_D_value), int(cxp_X_value), int(cxp_Y_value), int(chp_Z_value)])
+            writer.writerow([f"{datetime.datetime.now()}",int(nm_ip.decode(errors='ignore')), int(cd_x_value), int(cd_y_value), int(cd_D_value), int(cxp_X_value), int(cxp_Y_value), int(chp_Z_value)])
         
         # img_cd = cd_socket.image.read_image()
         # with open(f'img_cd_{timenow}.bmp', 'wb') as f:
         #     f.write(img_cd["data"])
-        img_cxp = cxp_socket.image.read_image()
-        with open(f'E:\Work\PY\imgcxp\img_cxp_{timenow}.bmp', 'wb') as f:
-            f.write(img_cxp["data"])
+        # img_cxp = cxp_socket.image.read_image()
+        # with open(f'E:/Work/PY/imgcxp/img_cxp_{timenow}.bmp', 'wb') as f:
+        #     f.write(img_cxp["data"])
         # img_chp = chp_socket.image.read_image()
         # with open(f'img_chp_{timenow}.bmp', 'wb') as f:
         #     f.write(img_chp["data"])
@@ -161,7 +171,7 @@ while True:
         
     if int(nm_ip.decode(errors='ignore')) == int(nb_set.decode(errors='ignore')):
             #cd_socket.close()
-            cxp_socket.close()
+            #cxp_socket.close()
             #chp_socket.close()
             print("Conditions not met. Done...")
             time.sleep(1)
