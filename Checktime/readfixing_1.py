@@ -4,6 +4,7 @@ from socket import *
 import struct
 import datetime
 import csv
+from CognexNativePy import NativeInterface
 
 #   https://qiita.com/OkitaSystemDesign/items/b8c19c313b7010e69ddf
 
@@ -116,6 +117,10 @@ ul_p12_done = 'TM134'
 number_set = 'DM1850.U'
 number_input = 'DM1852.U'
 timenow = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+#cd_socket = NativeInterface('192.168.0.22', 'admin', '')
+cxp_socket = NativeInterface('192.168.0.23', 'admin', '')
+#chp_socket = NativeInterface('192.168.0.24', 'admin', '')
+
 with open(f'datafix_{timenow}.csv', 'a', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow([f"{datetime.datetime.now()}: Start monitoring..."])
@@ -137,13 +142,27 @@ while True:
         cxp_X_value = kv.read(cxp_X.L).decode(errors='ignore')
         cxp_Y_value = kv.read(cxp_Y.L).decode(errors='ignore')
         chp_Z_value = kv.read(chp_Z.L).decode(errors='ignore')
-
+        
         print(f"CD X: {cd_x_value}, CD Y: {cd_y_value}, CD D: {cd_D_value}, CXP X: {cxp_X_value}, CXP Y: {cxp_Y_value}, CHP Z: {chp_Z_value}")
         with open(f'datafix_{timenow}.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow([f"{datetime.datetime.now()}", int(cd_x_value), int(cd_y_value), int(cd_D_value), int(cxp_X_value), int(cxp_Y_value), int(chp_Z_value)])
+        
+        # img_cd = cd_socket.image.read_image()
+        # with open(f'img_cd_{timenow}.bmp', 'wb') as f:
+        #     f.write(img_cd["data"])
+        img_cxp = cxp_socket.image.read_image()
+        with open(f'E:\Work\PY\imgcxp\img_cxp_{timenow}.bmp', 'wb') as f:
+            f.write(img_cxp["data"])
+        # img_chp = chp_socket.image.read_image()
+        # with open(f'img_chp_{timenow}.bmp', 'wb') as f:
+        #     f.write(img_chp["data"])
         time.sleep(2)
+        
     if int(nm_ip.decode(errors='ignore')) == int(nb_set.decode(errors='ignore')):
-           print("Conditions not met. Done...")
-           time.sleep(1)
-           break
+            #cd_socket.close()
+            cxp_socket.close()
+            #chp_socket.close()
+            print("Conditions not met. Done...")
+            time.sleep(1)
+            break
