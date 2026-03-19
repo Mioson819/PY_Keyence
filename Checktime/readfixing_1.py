@@ -3,6 +3,7 @@ import time
 from socket import *
 import struct
 import datetime
+import csv
 
 #   https://qiita.com/OkitaSystemDesign/items/b8c19c313b7010e69ddf
 
@@ -103,48 +104,46 @@ class kvHostLink:
 
 
 kv = kvHostLink('192.168.0.10')
-data = str(kv.mode('1').replace(b'\r\n', b''), 'utf-8')
-print(data)
-data = kv.mode('1')
-print(data.decode(errors='ignore'))
-#data = kv.er()
-#print(data)
-#data = kv.errclr()
-#print(data)
-#data = kv.unittype()
-#print(data)35
-#data = kv.settime()
-#print(data)
-#data = kv.set('MR0')
-#print(data)
-#data = kv.reset('MR1')
-#print(data)
-#data = kv.sts('MR10', 5)
-#print(data)
-#data = kv.rss('MR10', 4)
-#print(data)
-data = kv.read('dm1850.U')
-print(int(data.decode(errors='ignore')))
 
-#data = kv.read('MR40600')
-#print(data)
-#data = kv.read('MR40602')
-#data = data.replace(b'\r\n', b'')
-#print(data)
-# x = int(input("Enter the value to write to DM7300: "))
-# kv.write('dm7300', str(x))
+cd_x = 'DM648'
+cd_y = 'DM650'
+cd_D = 'DM654'
+cxp_X = 'DM718'
+cxp_Y = 'DM720'
+chp_Z = 'DM788'
+rquld_p12 = 'MR13700'
+ul_p12_done = 'TM134'
+number_set = 'DM1850.U'
+number_input = 'DM1852.U'
+timenow = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+with open(f'datafix_{timenow}.csv', 'a', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow([f"{datetime.datetime.now()}: Start monitoring..."])
+    writer.writerow(['Time', 'CD X', 'CD Y', 'CD D', 'CXP X', 'CXP Y', 'CHP Z'])
+nb_set = kv.read(number_set)
 
-#data = kv.reads('DM0.S', 4)
-#print(data)
-#data = kv.write('DM0.U', '2')
-#print(data)
-#data = kv.writs('DM1.S', 4, '1 2 3 4')
-#print(data)
+while True:
+    rq = kv.read(rquld_p12)
+    timecheck = kv.read(ul_p12_done)
+    nm_ip = kv.read(number_input)
+    #print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
+    if int(rq.decode(errors='ignore')) == 1 and int(timecheck.decode(errors='ignore')) == 2:
+        print("RQUld P12 is 1 and UL P12 Done is 2")
+        print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
+        # Đọc giá trị từ DM648, DM650, DM654, DM718, DM720, DM788
+        cd_x_value = kv.read(cd_x.L).decode(errors='ignore')
+        cd_y_value = kv.read(cd_y.L).decode(errors='ignore')
+        cd_D_value = kv.read(cd_D.L).decode(errors='ignore')
+        cxp_X_value = kv.read(cxp_X.L).decode(errors='ignore')
+        cxp_Y_value = kv.read(cxp_Y.L).decode(errors='ignore')
+        chp_Z_value = kv.read(chp_Z.L).decode(errors='ignore')
 
-# while True:
-#     try:
-#         x = int(input("Enter the value to write to DM7300: "))
-#         kv.write('dm7300', str(x))
-#     except Exception as e:
-#         print(f"Error during writing to DM7300: {e}")
-#         break
+        print(f"CD X: {cd_x_value}, CD Y: {cd_y_value}, CD D: {cd_D_value}, CXP X: {cxp_X_value}, CXP Y: {cxp_Y_value}, CHP Z: {chp_Z_value}")
+        with open(f'datafix_{timenow}.csv', 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([f"{datetime.datetime.now()}", int(cd_x_value), int(cd_y_value), int(cd_D_value), int(cxp_X_value), int(cxp_Y_value), int(chp_Z_value)])
+        time.sleep(2)
+    if int(nm_ip.decode(errors='ignore')) == int(nb_set.decode(errors='ignore')):
+           print("Conditions not met. Done...")
+           time.sleep(1)
+           break
