@@ -41,6 +41,8 @@ if file_job_cp.get_file() != job_name:
         ex_cp.set_online(1)
         print(f"Đã tải job CP: {job_name}")
 
+print(file_job_cp.get_file())
+
 elapse_time = (datetime.datetime.now() - start_time).total_seconds()
 print(f"Thời gian tải job CP: {elapse_time} giây")
 
@@ -51,6 +53,8 @@ if file_job_cf.get_file() != job_name:
         ex_cf.set_online(1)
         print(f"Đã tải job CF: {job_name}")
         
+print(file_job_cf.get_file())
+        
 elapse_time = (datetime.datetime.now() - start_time).total_seconds()
 print(f"Thời gian tải job CF: {elapse_time} giây")    
 
@@ -60,6 +64,8 @@ if file_job_cd.get_file() != job_name:
         file_job_cd.load_file(job_name)
         ex_cd.set_online(1)
         print(f"Đã tải job CD: {job_name}")
+
+print(file_job_cd.get_file())
     
 elapse_time = (datetime.datetime.now() - start_time).total_seconds()
 print(f"Thời gian tải job CD: {elapse_time} giây")
@@ -70,6 +76,8 @@ if file_job_cxp.get_file() != job_name:
         file_job_cxp.load_file(job_name)
         ex_cxp.set_online(1)
         print(f"Đã tải job CXP: {job_name}")
+
+print(file_job_cxp.get_file())
         
 elapse_time = (datetime.datetime.now() - start_time).total_seconds()
 print(f"Thời gian tải job CXP: {elapse_time} giây")        
@@ -80,6 +88,8 @@ if file_job_cu.get_file() != job_name:
         file_job_cu.load_file(job_name)
         ex_cu.set_online(1)
         print(f"Đã tải job CU: {job_name}")
+
+print(file_job_cu.get_file())
         
 elapse_time = (datetime.datetime.now() - start_time).total_seconds()
 print(f"Thời gian tải job CU: {elapse_time} giây")   
