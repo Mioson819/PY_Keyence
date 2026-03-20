@@ -39,6 +39,7 @@ while True:
     nm_ip = kv.read(number_input)
     #print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
     if int(rq.decode(errors='ignore')) == 1 and int(timecheck.decode(errors='ignore')) == 2:
+    #if True:
         print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
         # Đọc giá trị từ DM648, DM650, DM654, DM718, DM720, DM788
         cd_x_value = kv.read(cd_x).decode(errors='ignore')
