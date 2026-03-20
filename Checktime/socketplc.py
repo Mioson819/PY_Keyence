@@ -102,11 +102,11 @@ class kvHostLink:
         return rcv
 
 
-kv = kvHostLink('192.168.0.10')
-data = str(kv.mode('1').replace(b'\r\n', b''), 'utf-8')
-print(data)
-data = kv.mode('1')
-print(data.decode(errors='ignore'))
+# kv = kvHostLink('192.168.0.10')
+# data = str(kv.mode('1').replace(b'\r\n', b''), 'utf-8')
+# print(data)
+# data = kv.mode('1')
+# print(data.decode(errors='ignore'))
 #data = kv.er()
 #print(data)
 #data = kv.errclr()
@@ -123,8 +123,8 @@ print(data.decode(errors='ignore'))
 #print(data)
 #data = kv.rss('MR10', 4)
 #print(data)
-data = kv.read('dm1850.U')
-print(int(data.decode(errors='ignore')))
+# data = kv.read('dm1850.U')
+# print(int(data.decode(errors='ignore')))
 
 #data = kv.read('MR40600')
 #print(data)
