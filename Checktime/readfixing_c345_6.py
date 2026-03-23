@@ -41,7 +41,7 @@ with open(f'datafix_C6_{timenow}.csv', 'a', newline='') as csvfile:
     writer.writerow([f"{datetime.datetime.now().strftime('%H-%M-%S-%d-%m-%y-')}: Start monitoring..."])
     writer.writerow(['Time','STT', 'CU OK/NG', 'CU Pot', 'CU Gap Min', 'CU Gap Max'])
 
-countc345 = 0
+countc345 = -1
 countc6 = 0
 while True:
     rq = kv.read(rquld_p12)
@@ -49,7 +49,7 @@ while True:
     nb_set = kv.read(number_set)
     nb_ip = kv.read(number_input)
     #print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
-    if int(rq.decode(errors='ignore')) == 1 and int(timecheck.decode(errors='ignore')) == 2 and countc345 < int(nb_set.decode(errors='ignore')):
+    if int(rq.decode(errors='ignore')) == 1 and int(timecheck.decode(errors='ignore')) == 2 and countc345 < int(nb_ip.decode(errors='ignore')):
     #if True:
         
         print(f"RQUld P12: {rq.decode(errors='ignore')}, UL P12 Done: {int(timecheck.decode(errors='ignore'))}")
