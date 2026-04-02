@@ -31,7 +31,7 @@ ex_cu.set_online(1)
 
 
 # Ví dụ 1: Tải một job (file cấu hình) lên camera
-job_name = "1.15.job"
+job_name = "1.60.job"
 # Kiểm tra job hiện tại, nếu khác thì tải job mới
 if file_job_cp.get_file() != job_name:
 # Đưa camera offline trước khi tải job
