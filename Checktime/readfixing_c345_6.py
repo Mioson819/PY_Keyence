@@ -71,7 +71,7 @@ while True:
     rqcu =kv.read(rq_trig_cu)
     cu_done_value = kv.read(cu_done)
     if int(rqcu.decode(errors='ignore')) == 1:
-        time.sleep(0.8)
+        time.sleep(1)
         print(f"RQUld AFL4: {rqcu.decode(errors='ignore')}, CU Done: {int(cu_done_value.decode(errors='ignore'))}")
         cu_ok_ng_value = kv.read(cu_ok_ng).decode(errors='ignore')
         cu_pot_value = kv.read(cu_pot).decode(errors='ignore')
@@ -83,10 +83,7 @@ while True:
             writer.writerow([f"{datetime.datetime.now().strftime('%H-%M-%S-%d-%m-%y-')}", countc6, int(cu_ok_ng_value), int(cu_pot_value), int(cu_gap_min_value), int(cu_gap_max_value)])
         countc6 += 1
         
-            
-     
-         
-       
+
     if countc6 == int(nb_set.decode(errors='ignore')):
 
         print("Conditions not met. Done...")

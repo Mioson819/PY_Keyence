@@ -21,8 +21,8 @@ ex_c2.set_online(1)
 
 
 # Ví dụ 1: Tải một job (file cấu hình) lên camera
-job_name_c1 = "2.80.job"
-job_name_c2 = "2.80.job"
+job_name_c1 = "1.35.job"
+job_name_c2 = "2.50.job"
 # Kiểm tra job hiện tại, nếu khác thì tải job mới
 if file_job_c1.get_file() != job_name_c1:
 # Đưa camera offline trước khi tải job
